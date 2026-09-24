@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>MuleRun · 会动的 Agent 生态</title>
+<style>
+:root{
+  color-scheme: light;
+  --bg:#f7f8fc; --ink:#0e1220; --card:#0e1220; --card-text:#f2f4fa;
+  --text:#1a2030; --t2:#5a6478; --t3:#8b93a8;
+  --indigo:#4f46e5; --violet:#8b5cf6; --cyan:#06b6d4; --emerald:#10b981; --amber:#f59e0b; --rose:#f43f5e;
+  --r:20px; --mono:ui-monospace,"SF Mono",Menlo,monospace;
+  --sans:system-ui,-apple-system,"PingFang SC",sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{font-size:100%}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;min-height:100vh}
+/* ===== 动态背景: 极光斑块 + 粒子 ===== */
+.aurora{position:fixed;inset:-20%;z-index:0;pointer-events:none;filter:blur(60px);opacity:.55}
+.blob{position:absolute;border-radius:50%}
+.b1{width:55vw;height:55vw;background:radial-gradient(circle,rgba(79,70,229,.35),transparent 65%);animation:drift1 26s ease-in-out infinite}
+.b2{width:48vw;height:48vw;background:radial-gradient(circle,rgba(6,182,212,.3),transparent 65%);top:30%;right:-10%;animation:drift2 32s ease-in-out infinite}
+.b3{width:40vw;height:40vw;background:radial-gradient(circle,rgba(139,92,246,.32),transparent 65%);bottom:-5%;left:-8%;animation:drift3 22s ease-in-out infinite}
+@keyframes drift1{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(28vw,12vh) scale(1.15)}66%{transform:translate(8vw,30vh) scale(.92)}}
+@keyframes drift2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-24vw,20vh) scale(1.2)}}
+@keyframes drift3{0%,100%{transform:translate(0,0) scale(.95)}50%{transform:translate(20vw,-16vh) scale(1.1)}}
+.dots{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.dot{position:absolute;bottom:-4vh;border-radius:50%;opacity:0;animation:rise linear infinite}
+@keyframes rise{0%{transform:translateY(0);opacity:0}8%{opacity:.5}92%{opacity:.4}100%{transform:translateY(-108vh);opacity:0}}
+.wrap{position:relative;z-index:1;max-width:26.5rem;margin-inline:auto;padding:clamp(.9rem,4vw,1.5rem) clamp(.85rem,4vw,1.4rem) 4rem}
+/* ===== hero ===== */
+.hero{padding-block:clamp(1.6rem,7vw,3rem) clamp(1.2rem,5vw,2rem);text-align:center}
+.kicker{display:inline-flex;align-items:center;gap:.45rem;font-family:var(--mono);font-size:.7rem;color:var(--indigo);background:rgba(79,70,229,.08);border:1px solid rgba(79,70,229,.22);border-radius:999px;padding:.35rem .9rem;margin-block-end:.9rem}
+.pulse{width:.5rem;height:.5rem;border-radius:50%;background:var(--emerald);animation:pl 1.8s infinite}
+@keyframes pl{70%{box-shadow:0 0 0 .5rem rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}
+h1{font-size:clamp(2.4rem,1.4rem+7vw,4rem);font-weight:900;letter-spacing:-.03em;line-height:1.05;background:linear-gradient(100deg,#0e1220 0%,#4f46e5 30%,#8b5cf6 50%,#06b6d4 70%,#0e1220 100%);background-size:220% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 5s linear infinite}
+@keyframes shimmer{to{background-position:220% 0}}
+.tag{color:var(--t2);font-size:clamp(.85rem,.78rem+1vw,1.05rem);margin-block-start:.5rem}
+/* ===== stats ===== */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;margin-block-end:clamp(1.4rem,6vw,2.2rem)}
+.stat{background:var(--card);color:var(--card-text);border-radius:var(--r);padding:.9rem .4rem;text-align:center;box-shadow:0 10px 30px rgba(14,18,32,.25),0 2px 6px rgba(14,18,32,.15);opacity:0;transform:translateY(18px) scale(.96);animation:pop .5s cubic-bezier(.34,1.56,.64,1) forwards}
+.stat:nth-child(2){animation-delay:.08s}.stat:nth-child(3){animation-delay:.16s}.stat:nth-child(4){animation-delay:.24s}
+@keyframes pop{to{opacity:1;transform:translateY(0) scale(1)}}
+.stat b{display:block;font-family:var(--mono);font-size:clamp(1.1rem,.9rem+2vw,1.6rem);font-variant-numeric:tabular-nums;background:linear-gradient(90deg,#818cf8,#67e8f9);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat span{font-size:.58rem;letter-spacing:.14em;color:#8b93a8}
+/* ===== sections ===== */
+section{margin-block-end:clamp(1.4rem,6vw,2.2rem)}
+h2{font-size:clamp(1.05rem,.9rem+1vw,1.3rem);font-weight:800;margin-block-end:.9rem;display:flex;align-items:center;gap:.5rem}
+h2 .n{font-family:var(--mono);font-size:.62rem;color:var(--indigo);background:rgba(79,70,229,.09);border-radius:6px;padding:.12rem .45rem}
+.panel{background:#fff;border:1px solid rgba(14,18,32,.08);border-radius:var(--r);box-shadow:0 6px 24px rgba(14,18,32,.07)}
+/* ===== agent 池: 错峰入场 + hover 3D ===== */
+.pool{display:grid;gap:.65rem}
+.agent{display:flex;justify-content:space-between;align-items:center;gap:.8rem;padding:.9rem 1.05rem;opacity:0;transform:translateY(16px);animation:pop .5s cubic-bezier(.34,1.56,.64,1) forwards;transition:transform .25s,box-shadow .25s}
+.agent:hover{transform:translateY(-3px) scale(1.015);box-shadow:0 14px 36px rgba(79,70,229,.16)}
+.agent h3{font-size:.95rem;font-weight:800}
+.agent p{font-size:.7rem;color:var(--t3)}
+.agent .meta{font-family:var(--mono);font-size:.66rem;color:var(--t2);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:end}
+.badge{display:inline-flex;align-items:center;gap:.3rem;font-family:var(--mono);font-size:.56rem;padding:.14rem .5rem;border-radius:5px;position:relative;overflow:hidden}
+.badge::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.5) 50%,transparent 60%);transform:translateX(-120%);animation:sweep 2.6s infinite}
+@keyframes sweep{to{transform:translateX(120%)}}
+.badge.live{color:#059669;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.35)}
+.badge.live::before{content:"";width:.36rem;height:.36rem;border-radius:50%;background:var(--emerald);animation:pl 1.6s infinite}
+.badge.sim{color:var(--t3);background:rgba(139,147,168,.1);border:1px solid rgba(139,147,168,.3)}
+/* ===== console ===== */
+.console{padding:clamp(1rem,4vw,1.3rem)}
+label.lab{display:block;font-family:var(--mono);font-size:.7rem;color:var(--indigo);margin-block-end:.5rem}
+textarea{width:100%;font:inherit;font-size:.95rem;color:var(--text);background:#f2f3f9;border:1.5px solid rgba(14,18,32,.12);border-radius:14px;padding:.8rem .95rem;min-height:44px;resize:vertical;transition:border-color .2s,box-shadow .2s}
+textarea:focus-visible{outline:none;border-color:var(--indigo);box-shadow:0 0 0 4px rgba(79,70,229,.12)}
+.pills{display:flex;flex-wrap:wrap;gap:.5rem;margin-block:.9rem}
+.pill{font-family:var(--mono);font-size:.72rem;color:var(--t2);background:#fff;border:1.5px solid rgba(14,18,32,.12);border-radius:999px;padding:.55rem .95rem;min-height:44px;cursor:pointer;transition:all .18s cubic-bezier(.34,1.56,.64,1)}
+.pill:active{transform:scale(.94)}
+.pill[aria-pressed="true"]{color:#fff;background:linear-gradient(92deg,var(--indigo),var(--violet));border-color:transparent;box-shadow:0 6px 18px rgba(99,102,241,.4)}
+.grp{font-size:.72rem;color:var(--t3);min-width:4.5rem;align-self:center}
+.pill-group{display:flex;gap:.5rem;flex-wrap:wrap;margin-block:.25rem}
+/* EXECUTE: 旋转渐变描边 */
+.exec-wrap{position:relative;border-radius:16px;padding:2.5px;margin-block-start:1rem;background:conic-gradient(from 0deg,#4f46e5,#06b6d4,#8b5cf6,#f43f5e,#4f46e5);animation:spin 3.2s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.exec-btn{display:block;width:100%;min-height:50px;border:none;border-radius:14px;font:inherit;font-weight:800;font-size:.95rem;letter-spacing:.14em;color:#fff;cursor:pointer;background:linear-gradient(92deg,#312e81,#4f46e5 45%,#7c3aed);transition:transform .15s}
+.exec-btn:active{transform:scale(.97)}
+.exec-btn:disabled{opacity:.6}
+.examples{display:flex;flex-wrap:wrap;gap:.45rem;margin-block-start:.8rem}
+.example{font-size:.68rem;color:var(--indigo);background:rgba(79,70,229,.06);border:1.5px dashed rgba(79,70,229,.35);border-radius:10px;padding:.42rem .7rem;min-height:44px;cursor:pointer;transition:all .18s}
+.example:hover{background:rgba(79,70,229,.12);transform:translateY(-1px)}
+/* ===== results ===== */
+.step-card{padding:1rem 1.1rem;margin-block-end:.7rem;opacity:0;transform:translateY(16px);animation:pop .45s cubic-bezier(.34,1.56,.64,1) forwards}
+.step-head{display:flex;justify-content:space-between;gap:.6rem;font-family:var(--mono);font-size:.7rem;margin-block-end:.6rem;flex-wrap:wrap}
+.cands{list-style:none;display:grid;gap:.4rem}
+.cand{display:flex;justify-content:space-between;align-items:center;gap:.6rem;padding:.6rem .8rem;border-radius:12px;background:#f2f3f9;border:1px solid rgba(14,18,32,.07);font-size:.82rem;overflow:hidden}
+.cand .nm{font-weight:700}
+.cand .m{font-family:var(--mono);font-size:.64rem;color:var(--t2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.cand.win{background:linear-gradient(92deg,rgba(16,185,129,.12),rgba(79,70,229,.08));border-color:rgba(16,185,129,.45)}
+.cand.win .nm{color:#047857}
+.gate{display:inline-flex;align-items:center;gap:.3rem;font-family:var(--mono);font-size:.62rem;font-weight:700;padding:.18rem .6rem;border-radius:6px}
+.gate.go{color:#059669;background:rgba(16,185,129,.12)}
+.gate.hold{color:#b45309;background:rgba(245,158,11,.14)}
+.gate.stop{color:#9f1239;background:rgba(244,63,94,.1)}
+.bar{display:flex;align-items:center;gap:.55rem;margin-block:.3rem}
+.bar .nm{font-size:.76rem;font-weight:600;min-inline-size:38%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar .track{flex:1;block-size:.55rem;border-radius:999px;background:#e8eaf3;overflow:hidden}
+.bar i{display:block;block-size:100%;inline-size:0;border-radius:999px;background:linear-gradient(90deg,var(--indigo),var(--violet));transition:inline-size .9s cubic-bezier(.22,1,.36,1)}
+.bar.pct{color:var(--t2);font-family:var(--mono);font-size:.64rem;font-variant-numeric:tabular-nums}
+.verdict{font-family:var(--mono);font-size:.7rem;color:#047857;margin-block-start:.6rem}
+.verdict .why{color:var(--t3)}
+.term{padding:1rem 1.1rem}
+.term pre{font-family:var(--mono);font-size:.76rem;line-height:1.7;white-space:pre-wrap;color:var(--t2)}
+.skeleton{padding:1.1rem;display:flex;align-items:center;gap:.7rem;color:var(--t3);font-family:var(--mono);font-size:.78rem}
+.skeleton .spin{width:1rem;height:1rem;border-radius:50%;border:2.5px solid rgba(79,70,229,.2);border-block-start-color:var(--indigo);animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.error-msg{padding:1rem 1.1rem;color:var(--rose);font-size:.85rem}
+footer{text-align:center;color:var(--t3);font-family:var(--mono);font-size:.66rem;padding-block:1.6rem;letter-spacing:.06em}
+/* ===== v5.1 手机 App 壳: 顶栏 + 底部 Tab + 大号触控 ===== */
+html,body{height:100%}
+body{padding-bottom:calc(4.6rem + env(safe-area-inset-bottom))}
+.appbar{position:sticky;top:0;z-index:40;display:flex;justify-content:space-between;align-items:center;
+  padding:.7rem .2rem .7rem 0;margin-block-end:.6rem;
+  background:linear-gradient(180deg,rgba(247,248,252,.92),rgba(247,248,252,.75));backdrop-filter:blur(14px)}
+.appbar .brand{font-weight:900;font-size:1.15rem;letter-spacing:-.02em;
+  background:linear-gradient(92deg,#0e1220,#4f46e5,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.appbar .vpill{font-family:var(--mono);font-size:.62rem;color:var(--indigo);background:rgba(79,70,229,.08);
+  border:1px solid rgba(79,70,229,.22);border-radius:999px;padding:.34rem .75rem;display:flex;align-items:center;gap:.4rem}
+.stats{grid-template-columns:1fr 1fr;gap:.7rem}
+.stat{padding:1.05rem .5rem;border-radius:18px}
+.stat b{font-size:clamp(1.5rem,1.1rem+3vw,2.1rem)}
+.stat span{font-size:.62rem}
+.tabbar{position:fixed;bottom:0;left:0;right:0;z-index:50;display:flex;justify-content:space-around;gap:.3rem;
+  padding:.5rem .8rem calc(.5rem + env(safe-area-inset-bottom));
+  background:rgba(255,255,255,.88);backdrop-filter:blur(18px);border-top:1px solid rgba(14,18,32,.08)}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:.18rem;border:none;background:none;cursor:pointer;
+  font-size:.64rem;font-weight:700;color:var(--t3);padding:.45rem 0;border-radius:14px;transition:color .2s,background .2s;min-height:48px}
+.tab svg{width:1.35rem;height:1.35rem;fill:currentColor}
+.tab[aria-selected="true"]{color:#fff;background:linear-gradient(92deg,var(--indigo),var(--violet));box-shadow:0 8px 20px rgba(99,102,241,.4)}
+.view{display:none}
+.view.on{display:block}
+.pill{font-size:.78rem;padding:.62rem 1.05rem}
+textarea{font-size:1rem;padding:.95rem 1.05rem}
+.exec-btn{min-height:54px;font-size:1rem}
+.agent{padding:1rem 1.1rem}
+@media (max-width:430px){.wrap{padding-inline:.8rem}}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="aurora" aria-hidden="true"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+<div class="dots" id="dots" aria-hidden="true"></div>
+<div class="wrap">
+  <header class="appbar">
+    <span class="brand">⬡ MuleRun</span>
+    <span class="vpill"><span class="pulse"></span>JEV v<span id="ver">…</span></span>
+  </header>
+  <div class="view on" id="view-pool"><section aria-label="平台统计">
+    <div class="stats">
+      <div class="stat"><b id="s-agents">0</b><span>AGENTS</span></div>
+      <div class="stat"><b id="s-caps">0</b><span>CAPS</span></div>
+      <div class="stat"><b id="s-live">0</b><span>LIVE</span></div>
+      <div class="stat"><b id="s-cost">–</b><span>MIN ¥</span></div>
+    </div>
+  </section>
+  <section aria-label="Agent 池">
+    <h2><span class="n">POOL</span>Agent 池</h2>
+    <div id="pool" class="pool"></div>
+  </section>
+  </div>
+  <div class="view" id="view-cmd">
+  <section aria-label="路由指令">
+    <h2><span class="n">CMD</span>路由指令</h2>
+    <div class="panel console">
+      <label class="lab" for="cmd">指令（链式用「然后」分隔多步）</label>
+      <textarea id="cmd" rows="2" placeholder="例：研究 einstein 然后 算 2^10"></textarea>
+      <div class="pill-group"><span class="grp">能力</span><div class="pills" role="group" aria-label="能力选择" id="caps"></div></div>
+      <div class="pill-group"><span class="grp">策略</span><div class="pills" role="group" aria-label="路由策略" id="strats"></div></div>
+      <div class="exec-wrap"><button class="exec-btn" id="run" type="button">EXECUTE ▸</button></div>
+      <div class="examples" id="examples"></div>
+    </div>
+  </section>
+  </div>
+  <div class="view" id="view-out">
+  <section aria-label="路由结果">
+    <h2 id="res-h" hidden><span class="n">TRACE</span>路由结果</h2>
+    <div id="results" aria-live="polite"></div>
+    <div id="term-wrap" class="panel term" hidden>
+      <h2><span class="n">OUT</span>OUTPUT</h2>
+      <pre id="term"></pre>
+    </div>
+  </section>
+  </section>
+  </div>
+  <footer style="padding-block:.9rem">MULERUN · JEV ENGINE</footer>
+</div>
+<nav class="tabbar" role="tablist" aria-label="主导航">
+  <button class="tab" role="tab" aria-selected="true" data-v="view-pool" id="tab-pool">
+    <svg viewBox="0 0 24 24"><path d="M4 6h16v3H4zm0 5h16v3H4zm0 5h16v3H4z"/></svg>Agent 池</button>
+  <button class="tab" role="tab" aria-selected="false" data-v="view-cmd" id="tab-cmd">
+    <svg viewBox="0 0 24 24"><path d="M4 3h16a1 1 0 011 1v16a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1zm2 4v2h12V7zm0 4v2h9v-2zm0 4v2h6v-2z"/></svg>指令</button>
+  <button class="tab" role="tab" aria-selected="false" data-v="view-out" id="tab-out">
+    <svg viewBox="0 0 24 24"><path d="M3 3h18v18H3zm2 2v14h14V5zm2 2h10v2H7zm0 4h10v2H7zm0 4h6v2H7z"/></svg>结果</button>
+</nav>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  // 底部 Tab 切换 (App 壳)
+  const tabs = [...document.querySelectorAll('.tab')];
+  function selectTab(btn) {
+    tabs.forEach(t => t.setAttribute('aria-selected', String(t === btn)));
+    document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', v.id === btn.dataset.v));
+    window.scrollTo({top: 0});
+  }
+  tabs.forEach(t => t.addEventListener('click', () => selectTab(t)));
+  // 结果产生后自动跳结果页
+  window._gotoOut = () => selectTab(document.getElementById('tab-out'));
+  let strategy = 'cost', cap = null;
+  const fmt = (n) => '$' + Number(n).toFixed(2);
+
+  // 粒子上浮 (decorative, aria-hidden)
+  const dots = $('dots');
+  const colors = ['rgba(79,70,229,.5)', 'rgba(6,182,212,.5)', 'rgba(139,92,246,.45)', 'rgba(16,185,129,.4)'];
+  for (let i = 0; i < 26; i++) {
+    const d = document.createElement('span');
+    d.className = 'dot';
+    const s = 2 + Math.random() * 4;
+    d.style.cssText = `width:${s}px;height:${s}px;left:${Math.random()*100}vw;background:${colors[i%4]};animation-duration:${9+Math.random()*14}s;animation-delay:${-Math.random()*20}s`;
+    dots.appendChild(d);
+  }
+
+  // 数字滚动
+  function countUp(el, target, suffix) {
+    const t0 = performance.now(), dur = 900;
+    (function tick(t) {
+      const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = suffix ? fmt(target * e) : Math.round(target * e);
+      if (p < 1) requestAnimationFrame(tick);
+    })(t0);
+  }
+
+  fetch('/health').then(r => r.json()).then(d => $('ver').textContent = d.version).catch(() => $('ver').textContent = '?');
+
+  fetch('/agents').then(r => r.json()).then(list => {
+    const caps = [...new Set(list.flatMap(a => a.capabilities || []))];
+    countUp($('s-agents'), list.length);
+    countUp($('s-caps'), caps.length);
+    countUp($('s-live'), list.filter(a => a.endpoint).length);
+    countUp($('s-cost'), Math.min(...list.map(a => a.avg_cost ?? 0)), true);
+    $('pool').innerHTML = list.map((a, i) => `
+      <article class="panel agent" style="animation-delay:${.35 + i * .09}s">
+        <div><h3>${a.title}</h3><p>${a.description || ''}</p></div>
+        <div class="meta">${fmt(a.avg_cost ?? 0)}/次 · ${a.avg_latency ?? '–'}ms · P${a.priority ?? 0}<br>
+          <span class="badge ${a.endpoint ? 'live' : 'sim'}">${a.endpoint ? 'LIVE' : 'SIM'}</span></div>
+      </article>`).join('');
+    $('caps').innerHTML = caps.map(c => `<button type="button" class="pill" data-cap="${c}" aria-pressed="false">${c}</button>`).join('');
+    $('caps').addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b) return;
+      const was = b.getAttribute('aria-pressed') === 'true';
+      $('caps').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', 'false'));
+      if (!was) { b.setAttribute('aria-pressed', 'true'); cap = b.dataset.cap; } else cap = null;
+    });
+  }).catch(() => {});
+
+  $('strats').innerHTML = ['cost', 'latency'].map((s, i) =>
+    `<button type="button" class="pill" data-s="${s}" aria-pressed="${i === 0}">${i ? '⚡ latency' : '$ cost'}</button>`).join('');
+  $('strats').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    $('strats').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', 'false'));
+    b.setAttribute('aria-pressed', 'true'); strategy = b.dataset.s;
+  });
+
+  const EXAMPLES = ['研究 einstein 然后 算 2^10', '搜索 solana blockchain', '算 sqrt(144) + 5*3', '写个 python 函数'];
+  $('examples').innerHTML = EXAMPLES.map(x => `<button type="button" class="example">▸ ${x}</button>`).join('');
+  $('examples').addEventListener('click', e => {
+    if (e.target.matches('button')) { $('cmd').value = e.target.textContent.replace('▸ ', ''); $('run').focus(); }
+  });
+
+  $('run').addEventListener('click', async () => {
+    const text = $('cmd').value.trim();
+    if (!text) { $('cmd').focus(); return; }
+    const res = $('results'), tw = $('term-wrap'), btn = $('run');
+    btn.disabled = true; res.setAttribute('aria-busy', 'true');
+    res.innerHTML = '<div class="panel skeleton" role="status"><span class="spin" aria-hidden="true"></span>十步法内核计算中…</div>';
+    tw.hidden = true; $('res-h').hidden = true;
+    try {
+      const chainMode = !cap && /然后|->|→|then|;/.test(text);
+      const url = chainMode ? `/api/chain?text=${encodeURIComponent(text)}&strategy=${strategy}`
+        : `/api/ask?capability=${encodeURIComponent(cap || 'search')}&strategy=${strategy}`;
+      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ q: text, task: text }) });
+      const data = await r.json();
+      chainMode ? renderChain(data) : renderAsk(data);
+      window._gotoOut();
+    } catch (err) {
+      res.innerHTML = `<div class="panel error-msg" role="alert">✘ ${err.message}</div>`;
+    } finally { btn.disabled = false; res.removeAttribute('aria-busy'); }
+  });
+
+  const barRow = (name, p, win) => `
+    <div class="bar"><span class="nm">${name}</span>
+      <span class="track"><i data-w="${Math.round(p * 100)}" class="${win ? 'w' : ''}"></i></span>
+      <span class="pct">${(p * 100).toFixed(1)}%</span></div>`;
+
+  function growBars(root) {
+    requestAnimationFrame(() => requestAnimationFrame(() =>
+      root.querySelectorAll('.bar i').forEach(i => i.style.inlineSize = i.dataset.w + '%')));
+  }
+
+  function renderAsk(d) {
+    $('res-h').hidden = false;
+    const gate = d.gate.startsWith('EXECUTE');
+    const total = Object.values(d.distribution || {}).reduce((a, b) => a + b, 0) || 1;
+    $('results').innerHTML = `
+      <article class="panel step-card">
+        <div class="step-head"><span>「${d.question}」</span>
+          <span class="gate ${gate ? 'go' : 'hold'}">${gate ? '✓ EXECUTE' : '⚠ REVIEW'} · conf ${(d.confidence * 100).toFixed(1)}%</span></div>
+        ${Object.entries(d.distribution).sort((a, b) => b[1] - a[1]).map(([n, p]) => barRow(n, p / total, n === d.winner)).join('')}
+        <p class="verdict">${gate ? '✓ 置信度达标，已派活执行' : '⚠ 置信度不足 → saved handoff 进 review，不执行'} <span class="why">${d.gate}</span></p>
+      </article>`;
+    growBars($('results'));
+    const tw = $('term-wrap'), term = $('term');
+    tw.hidden = false; term.textContent = '';
+    const full = gate
+      ? `[${(d.exec?.status || '').toUpperCase()}] → ${d.winner}\\n${d.exec?.summary || d.exec?.response || ''}`
+      : `[REVIEW] → ${d.winner || '—'} (conf ${(d.confidence * 100).toFixed(1)}%)\\nhandoff: ${d.handoff}`;
+    typeOut(term, full);
+  }
+
+  function renderChain(d) {
+    $('res-h').hidden = false;
+    const gateCls = d.done_verified ? 'go' : 'stop';
+    $('results').innerHTML = `
+      <article class="panel step-card">
+        <div class="step-head"><span>「${d.goal}」</span>
+          <span class="gate ${gateCls}">${d.done_verified ? '✓ DONE 已验证' : '⏹ ' + (d.completed + '/' + d.total_steps)} · 花费 ${fmt(d.spent)}</span></div>
+        <ul class="cands">${d.log.map(l => {
+          if (l.event === 'executed') return `<li class="cand win"><span class="nm">${l.agent}</span><span class="m">${l.status.toUpperCase()} · conf ${(l.confidence * 100).toFixed(0)}% · ${fmt(l.cost)}</span></li>`;
+          if (l.event === 'low_confidence') return `<li class="cand"><span class="nm">⚠ ${l.step}</span><span class="m">conf ${(l.confidence * 100).toFixed(1)}% → review</span></li>`;
+          if (l.event === 'no_agent') return `<li class="cand"><span class="nm">✘ ${l.step}</span><span class="m">无 ${l.capability} Agent</span></li>`;
+          if (l.event === 'stop') return `<li class="cand"><span class="nm">■ STOP</span><span class="m">${l.reason} · ${fmt(l.spent ?? d.spent)}</span></li>`;
+          return '';}).join('')}</ul>
+        <p class="verdict">${d.done_verified ? '✓ 全部完成（代码独立验证，非模型自述）' : '⚠ 停止条件触发，进度已存 queue/progress.json'} <span class="why">actions ${d.actions}</span></p>
+      </article>`;
+    const tw = $('term-wrap'), term = $('term');
+    tw.hidden = false; term.textContent = '';
+    const full = d.log.filter(l => l.event === 'executed')
+      .map(l => `[${(l.status || '').toUpperCase()}] ${l.agent} ← ${l.step} (conf ${(l.confidence * 100).toFixed(0)}%)\\n${l.result_summary || ''}`)
+      .join('\\n\\n') || '(无执行)';
+    typeOut(term, full);
+  }
+
+  function typeOut(term, full) {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { term.textContent = full; return; }
+    let k = 0; const t = setInterval(() => {
+      term.textContent = full.slice(0, k += 3);
+      if (k >= full.length) clearInterval(t);
+    }, 14);
+  }
+})();
+</script>
+</body>
+</html>
