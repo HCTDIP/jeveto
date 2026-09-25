@@ -136,9 +136,16 @@ class GitHubPipelineBackend:
 
 
 def real_or_mock(rec: dict = None):
-    """选后端：有 GITHUB_TOKEN 就用真的，否则退回 mock（本地开发/TDD）。"""
+    """选后端（显式开关，绝不"偷偷变脸"）：
+
+        JEVETO_PIPELINE=real 且有 GITHUB_TOKEN  → 真 GitHub API（真的开 PR）
+        其他任何情况                            → Mock（零外呼，测试/CI 保持不变）
+    """
     from .agents_registry import MockPipelineBackend
-    return GitHubPipelineBackend() if os.environ.get("GITHUB_TOKEN") else MockPipelineBackend()
+    want_real = os.environ.get("JEVETO_PIPELINE", "mock").lower() == "real"
+    if want_real and os.environ.get("GITHUB_TOKEN"):
+        return GitHubPipelineBackend()
+    return MockPipelineBackend()
 
 
 def _selftest(org: str, repo: str):
