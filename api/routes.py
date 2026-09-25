@@ -54,7 +54,8 @@ async def chain(text: str, strategy: str = "cost", db: Session = Depends(get_db)
                 action_limit: int = 10, spending_limit: float = 1.0):
     """十步法 Chief-of-Staff: 决策循环 + 停止条件 + DONE 独立验证"""
     engine = JevEngine(db, queue_root="queue")
-    chief = ChiefOfStaff(engine, JevClient(db).execute_agent,
+    from core.agents_registry import make_chief_executor
+    chief = ChiefOfStaff(engine, make_chief_executor(db),
                          action_limit=action_limit, spending_limit=spending_limit)
     return await chief.run(text, strategy)
 

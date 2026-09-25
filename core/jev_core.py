@@ -196,7 +196,7 @@ class ChiefOfStaff:
     @staticmethod
     def _map_capability(step: str) -> str:
         import re
-        for cap, pat in [("math", r"计算|算|math|calc"),
+        for cap, pat in [("devops", r"bounty|devops|领赏|部署|pipeline"), ("math", r"计算|算|math|calc"),
                          ("research", r"研究|百科|wiki|research|了解"),
                          ("search", r"搜索|search|查|找|look ?up"),
                          ("code_gen", r"代码|code|写|generate|函数")]:
