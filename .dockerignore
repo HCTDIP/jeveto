@@ -1,0 +1,8 @@
+.git
+__pycache__
+*.pyc
+*.db
+queue/
+reports/
+state/
+.env

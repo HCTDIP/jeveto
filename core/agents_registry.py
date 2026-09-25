@@ -101,6 +101,10 @@ def make_chief_executor(db, backend=None):
     jev_client = JevClient(db)
 
     async def executor(agent, payload):
+        from .mcp_agent import make_mcp_executor
+        mcp_result = await make_mcp_executor(agent, payload)      # MCP 工具（零成本）
+        if mcp_result is not None:
+            return mcp_result
         result = await make_devops_executor(agent, payload)
         if result is not None:
             return result

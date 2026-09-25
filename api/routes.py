@@ -44,7 +44,8 @@ async def ask_agent(payload: dict, capability: str, strategy: str = "cost",
                 "gate": "REVIEW (confidence < 0.85, saved handoff, NOT executed)",
                 "handoff": str(path), "exec": None}
     agent = db.query(Agent).filter(Agent.title == ans.value).first()
-    exec_result = await JevClient(db).execute_agent(agent, payload)
+    from core.agents_registry import make_chief_executor
+    exec_result = await make_chief_executor(db)(agent, payload)
     return {"question": ans.question_id, "kind": ans.kind, "winner": ans.value,
             "distribution": ans.distribution, "confidence": ans.confidence,
             "gate": "EXECUTE (confidence >= 0.85)", "exec": exec_result}
