@@ -63,8 +63,14 @@ class MockPipelineBackend:
 
 
 def _run_pipeline(rec, backend=None):
-    """状态机推进: fork → commit_fix → open_pr → check_ci（不跳级）。"""
-    backend = backend or MockPipelineBackend()
+    """状态机推进: fork → commit_fix → open_pr → check_ci（不跳级）。
+
+    后端选择：有 GITHUB_TOKEN → 真 GitHubPipelineBackend（真的建分支/开 PR/读 CI，零模型费）；
+    没有 → 退回 Mock（本地开发/TDD 用，绝不假装开了 PR）。
+    """
+    if backend is None:
+        from .github_backend import real_or_mock
+        backend = real_or_mock()
     backend.fork(rec)
     backend.commit_fix(rec)
     pr = backend.open_pr(rec)
