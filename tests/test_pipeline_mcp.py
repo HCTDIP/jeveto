@@ -76,8 +76,14 @@ class TestRealPipelineBackend(unittest.TestCase):
         self.assertEqual(out["ci_status"], "pending(no checks configured)")   # 绝不假装 pass
 
     def test_requires_token(self):
-        with self.assertRaises(RuntimeError):
-            GitHubPipelineBackend(token="")
+        # 显式清掉环境变量：否则会回落到 env 里的 token，测不出"必须有 token"这条
+        saved = os.environ.pop("GITHUB_TOKEN", None)
+        try:
+            with self.assertRaises(RuntimeError):
+                GitHubPipelineBackend(token="")
+        finally:
+            if saved:
+                os.environ["GITHUB_TOKEN"] = saved
 
 
 class TestBackendSelection(unittest.TestCase):
