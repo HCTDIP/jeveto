@@ -4,10 +4,11 @@ from core.database import get_db
 from core.models import Agent
 from core.parser import LLMPartsParser
 from core.jevkit import JevClient
+from core.auth import require_auth
 from core.jev_core import (JevEngine, Choice, Score, Noul, ChiefOfStaff,
                            CONFIDENCE_THRESHOLD)
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_auth)])
 
 @router.post("/sync/{url:path}")
 async def sync_from_llms(url: str, db: Session = Depends(get_db)):

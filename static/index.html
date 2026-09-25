@@ -141,6 +141,61 @@ textarea{font-size:1rem;padding:.95rem 1.05rem}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
 </head>
+
+<script>
+/* --- 最小登录层：后端未设 JEVETO_PASSWORD 时自动跳过 --- */
+window.JV = {
+  token: function(){ return localStorage.getItem('jeveto_token') || ''; },
+  save: function(t){ localStorage.setItem('jeveto_token', t || ''); },
+  fetch: function(url, opts){
+    opts = opts || {};
+    var h = Object.assign({}, opts.headers || {});
+    if (window.JV.token()) h['X-Token'] = window.JV.token();
+    opts.headers = h;
+    return fetch(url, opts);
+  },
+  gate: function(){
+    fetch('/auth/status').then(function(r){ return r.json(); }).then(function(d){
+      if (!d.auth_required) return;                       // 开发模式，直接放行
+      if (window.JV.token()) return;                      // 已有 token（过期时下一次请求会 401 提示）
+      window.JV.showLogin();
+    }).catch(function(){});
+  },
+  showLogin: function(msg){
+    if (document.getElementById('jv-login')) return;
+    var d = document.createElement('div');
+    d.id = 'jv-login';
+    d.style.cssText = 'position:fixed;inset:0;z-index:99;background:#070c18ee;display:flex;align-items:center;justify-content:center;padding:1.2rem';
+    d.innerHTML = '<div style="background:#101a2e;border:1px solid #22304d;border-radius:14px;padding:1.2rem;width:100%;max-width:22rem">'
+      + '<div style="font-size:1.05rem;font-weight:700;margin-bottom:.2rem">jeveto 登录</div>'
+      + '<div style="color:#8ba0c4;font-size:.8rem;margin-bottom:.9rem">' + (msg || '输入访问密码') + '</div>'
+      + '<input id="jv-pw" type="password" placeholder="密码" style="width:100%;padding:.6rem;border-radius:9px;border:1px solid #22304d;background:#0b1220;color:#e9eefb;font-size:1rem">'
+      + '<button id="jv-go" style="margin-top:.7rem;width:100%;padding:.65rem;border:0;border-radius:9px;background:#7aa2ff;color:#06101f;font-weight:700;font-size:1rem">登录</button>'
+      + '<div id="jv-err" style="color:#ff8a8a;font-size:.8rem;margin-top:.5rem;min-height:1em"></div></div>';
+    document.body.appendChild(d);
+    var go = function(){
+      var pw = document.getElementById('jv-pw').value;
+      fetch('/login', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({password: pw})})
+        .then(function(r){ return r.json().then(function(j){ return {ok:r.ok, j:j}; }); })
+        .then(function(res){
+          if (!res.ok) { document.getElementById('jv-err').textContent = (res.j && res.j.detail) || '登录失败'; return; }
+          window.JV.save(res.j.token); location.reload();
+        }).catch(function(e){ document.getElementById('jv-err').textContent = '网络错误'; });
+    };
+    document.getElementById('jv-go').onclick = go;
+    document.getElementById('jv-pw').addEventListener('keydown', function(e){ if (e.key === 'Enter') go(); });
+  }
+};
+/* 401 自动弹回登录 */
+var _origFetch = window.fetch;
+window.fetch = function(u, o){
+  return _origFetch(u, o).then(function(r){
+    if (r.status === 401 && String(u).indexOf('/login') === -1) { window.JV.save(''); window.JV.showLogin('登录已过期，请重新登录'); }
+    return r;
+  });
+};
+document.addEventListener('DOMContentLoaded', function(){ window.JV.gate(); });
+</script>
 <body>
 <div class="aurora" aria-hidden="true"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
 <div class="dots" id="dots" aria-hidden="true"></div>
@@ -235,7 +290,7 @@ textarea{font-size:1rem;padding:.95rem 1.05rem}
 
   fetch('/health').then(r => r.json()).then(d => $('ver').textContent = d.version).catch(() => $('ver').textContent = '?');
 
-  fetch('/agents').then(r => r.json()).then(list => {
+  window.JV.fetch('/agents').then(r => r.json()).then(list => {
     const caps = [...new Set(list.flatMap(a => a.capabilities || []))];
     countUp($('s-agents'), list.length);
     countUp($('s-caps'), caps.length);
@@ -281,7 +336,7 @@ textarea{font-size:1rem;padding:.95rem 1.05rem}
       const chainMode = !cap && /然后|->|→|then|;/.test(text);
       const url = chainMode ? `/api/chain?text=${encodeURIComponent(text)}&strategy=${strategy}`
         : `/api/ask?capability=${encodeURIComponent(cap || 'search')}&strategy=${strategy}`;
-      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ q: text, task: text }) });
+      const r = await window.JV.fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ q: text, task: text }) });
       const data = await r.json();
       chainMode ? renderChain(data) : renderAsk(data);
       window._gotoOut();

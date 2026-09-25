@@ -6,6 +6,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from core import models, database
 from api.routes import router
+from core.auth import auth_required, check_password, issue_token, require_auth
 
 # Initialize database
 models.Base.metadata.create_all(bind=database.engine)
@@ -30,8 +31,24 @@ def read_root():
 def health_check():
     return {"status": "running", "version": "0.2.0"}
 
+@app.post("/login")
+def login(payload: dict):
+    """单用户登录：{password} → {token}。未设 JEVETO_PASSWORD 时鉴权关闭。"""
+    from fastapi import HTTPException
+    if not auth_required():
+        return {"auth_required": False, "token": "", "note": "服务端未设 JEVETO_PASSWORD，鉴权关闭"}
+    if not check_password((payload or {}).get("password", "")):
+        raise HTTPException(status_code=401, detail="密码错误")
+    return {"auth_required": True, **issue_token()}
+
+
+@app.get("/auth/status")
+def auth_status():
+    return {"auth_required": auth_required()}
+
+
 @app.get("/agents")
-def list_agents(db: Session = Depends(database.get_db)):
+def list_agents(db: Session = Depends(database.get_db), _=Depends(require_auth)):
     return db.query(models.Agent).all()
 
 app.mount("/static", StaticFiles(directory="static"), name="static")

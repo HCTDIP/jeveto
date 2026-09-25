@@ -18,6 +18,8 @@ COPY . .
 RUN useradd -m appuser && chown -R appuser:appuser /app
 USER appuser
 
+# 鉴权：平台上设 JEVETO_PASSWORD（不写进镜像）；不设则鉴权关闭
+#   JEVETO_PASSWORD=...   JEVETO_SECRET=...（可选）   JEVETO_TOKEN_TTL=43200（秒）
 EXPOSE 8000
 
 # 平台注入 $PORT；health check 用 /health
