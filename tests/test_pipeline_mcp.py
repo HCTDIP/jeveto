@@ -87,21 +87,36 @@ class TestRealPipelineBackend(unittest.TestCase):
 
 
 class TestBackendSelection(unittest.TestCase):
-    def test_default_is_mock(self):
+    """四种组合全测，且完全不依赖外部环境（CI 里也确定）。"""
+
+    KEYS = ("JEVETO_PIPELINE", "GITHUB_TOKEN")
+
+    def setUp(self):
+        self.saved = {k: os.environ.pop(k, None) for k in self.KEYS}
+
+    def tearDown(self):
+        for k in self.KEYS:
+            os.environ.pop(k, None)
+            if self.saved.get(k):
+                os.environ[k] = self.saved[k]
+
+    def _snap(self):
+        return {k: v for k, v in os.environ.items() if "JEVETO" in k or "GITHUB_TOKEN" == k}
+
+    def test_真开关四种组合(self):
         from core.agents_registry import MockPipelineBackend
-        env = os.environ.pop("JEVETO_PIPELINE", None)
+
+        # 1) 什么都不设 → mock
+        self.assertIsInstance(real_or_mock(), MockPipelineBackend, self._snap())
+        # 2) 只有 token、没开关 → 仍 mock（绝不"有 token 就偷偷变脸"）
         os.environ["GITHUB_TOKEN"] = "stub"
-        try:
-            self.assertIsInstance(real_or_mock(), MockPipelineBackend)
-            os.environ["JEVETO_PIPELINE"] = "real"
-            self.assertIsInstance(real_or_mock(), GitHubPipelineBackend)
-            os.environ.pop("GITHUB_TOKEN")
-            self.assertIsInstance(real_or_mock(), MockPipelineBackend)   # 没 token 也不硬闯
-        finally:
-            os.environ.pop("JEVETO_PIPELINE", None)
-            os.environ.pop("GITHUB_TOKEN", None)
-            if env:
-                os.environ["JEVETO_PIPELINE"] = env
+        self.assertIsInstance(real_or_mock(), MockPipelineBackend, self._snap())
+        # 3) 开关=real + token → 真后端
+        os.environ["JEVETO_PIPELINE"] = "real"
+        self.assertIsInstance(real_or_mock(), GitHubPipelineBackend, self._snap())
+        # 4) 开关=real 但没 token → 退回 mock（不硬闯）
+        os.environ.pop("GITHUB_TOKEN")
+        self.assertIsInstance(real_or_mock(), MockPipelineBackend, self._snap())
 
 
 if __name__ == "__main__":
