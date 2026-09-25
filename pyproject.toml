@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jeveto"
+version = "0.2.0"
+description = "Confidence-gated agent decision layer: decide with calibrated probabilities, gated by explicit thresholds"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "HCTDIP" }]
+keywords = ["llm", "agents", "decision", "calibration", "guardrail", "confidence-gate", "jev"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+]
+dependencies = ["fastapi", "uvicorn", "sqlalchemy", "pydantic"]
+
+[project.optional-dependencies]
+dev = ["pytest", "httpx"]
+
+[project.urls]
+Homepage = "https://github.com/HCTDIP/jeveto"
+Repository = "https://github.com/HCTDIP/jeveto"
+"Ecosystem: client" = "https://github.com/HCTDIP/jevkit"
+"Ecosystem: monitoring" = "https://github.com/HCTDIP/jev-calib"
+
+[tool.setuptools]
+packages = ["core", "api"]
+py-modules = ["main"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

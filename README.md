@@ -1,5 +1,7 @@
 # Jeveto
 
+[![CI](https://github.com/HCTDIP/jeveto/actions/workflows/ci.yml/badge.svg)](https://github.com/HCTDIP/jeveto/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 > **置信度门控的 Agent 决策层** —— 把"该不该动手"从模型自述里抢回来，交给**概率 + 硬闸门**
 > 内核实现自 [Jev Engineering: 10-Step Roadmap](https://x.com/i/article/2100984487802708306)（@0xCodila）
 > `LLM creates the work → Jev decides what happens next`
@@ -43,6 +45,7 @@
 
 - **蜜罐识别 2/2 与人工尽调一致** —— 人工要翻几天历史才能得出的结论，决策层 **1 秒内**给出
 - **重复一致性：4/4 flips = 0**（同一样本重复 3 次，判定完全一致）
+- **可复现性（白箱验证）**：同一样本连续 3 次 —— 漂移 **≤0.01**、**0 翻转**；微扰响应方向全符合直觉（去 `Help!` −0.07 / 加 `URGENT:` +0.72 / `overdue`→`paid in full` −0.93）；单次决策 **$0.0000119**（±2%）—— 复现脚本与监控见姊妹仓 [jev-calib](https://github.com/HCTDIP/jev-calib)
 - 成本：**$0.00003 / 机会**（单次决策），延迟 ~0.9s
 - 样本与判定记录在姊妹仓的执行日志中，可复跑（`--engine jev|chat|auto`，后端可换）
 

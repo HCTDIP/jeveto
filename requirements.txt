@@ -1,1 +1,4 @@
-fastapi\nuvicorn\nsqlalchemy\npydantic
+fastapi
+uvicorn
+sqlalchemy
+pydantic

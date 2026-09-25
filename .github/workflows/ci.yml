@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest httpx
+      - name: Unit tests
+        run: python -m pytest tests/ -q
+      - name: Kernel smoke test (offline, 16 checks)
+        run: rm -f *.db && rm -rf queue && python smoke_test.py
+      - name: API boots
+        run: |
+          python - <<'PY'
+          from fastapi.testclient import TestClient
+          from main import app
+          r = TestClient(app).get("/health")
+          assert r.status_code == 200 and r.json()["status"] == "running", r.text
+          print("health OK:", r.json())
+          PY

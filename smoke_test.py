@@ -1,9 +1,12 @@
-import sys, asyncio
-sys.path.insert(0, "/var/minis/workspace/mule-run")
+import sys, asyncio, os, pathlib
+ROOT = pathlib.Path(__file__).resolve().parent
+sys.path.insert(0, str(ROOT))            # 仓库根，克隆即可跑
+# 注意：smoke_test 会写 cwd 下的 mule_run.db 与 queue/ —— 请在干净目录跑（CI 每次全新 clone 天然满足）
 from core import models, database
 from core.jevkit import JevClient
 from fastapi.testclient import TestClient
 from main import app
+
 
 # RED->GREEN: Jev routing must pick cheapest capable agent
 database.SessionLocal()
