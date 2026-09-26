@@ -11,9 +11,9 @@
   · 与服务器成对启停（用 with 语句或 close()）
 
 用法：
-    with MCPClient(["node", ".../server-filesystem/dist/index.js", "/var/minis/shared"]) as c:
+    with MCPClient(["node", ".../server-filesystem/dist/index.js", "/path/to/shared"]) as c:
         print(c.list_tools())
-        print(c.call_tool("list_directory", {"path": "/var/minis/shared"}))
+        print(c.call_tool("list_directory", {"path": "/path/to/shared"}))
 """
 import json
 import os
@@ -111,13 +111,13 @@ class MCPClient:
         self.close()
 
 
-# ---------- 军团自己的服务器清单（与 /var/minis/mcp-servers/servers.json 对齐） ----------
+# ---------- Example MCP server list (align with your own servers.json) ----------
 NODE_DIR = os.environ.get("MCP_NODE_DIR", "/root/mcp-node/node_modules/@modelcontextprotocol")
 
 
 def filesystem_server(roots: list = None):
     return ["node", f"{NODE_DIR}/server-filesystem/dist/index.js",
-            *(roots or ["/var/minis/workspace", "/var/minis/shared"])]
+            *(roots or ["/path/to/workspace", "/path/to/shared"])]
 
 
 def github_server():
@@ -147,6 +147,6 @@ if __name__ == "__main__":
         for t in tools[:12]:
             print(f"   · {t['name']}: {(t.get('description') or '')[:64]}")
         if kind == "filesystem":
-            out = c.call_tool("list_directory", {"path": "/var/minis/shared"})
-            print("[MCP] 真调用 list_directory /var/minis/shared →")
+            out = c.call_tool("list_directory", {"path": "/path/to/shared"})
+            print("[MCP] 真调用 list_directory /path/to/shared →")
             print("   " + (out["text"] or "")[:280].replace("\n", "\n   "))
