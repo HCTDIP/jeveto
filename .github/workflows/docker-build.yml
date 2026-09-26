@@ -4,13 +4,6 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths:
-      - 'Dockerfile'
-      - 'requirements.txt'
-      - 'main.py'
-      - 'api/**'
-      - 'core/**'
-      - 'static/**'
 
 permissions:
   contents: read
@@ -37,24 +30,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=raw,value=latest,enable={{is_default_branch}}
-
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Output image digest
-        run: echo "Image pushed: ${{ steps.meta.outputs.tags }}"
+        run: echo "Image pushed: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
